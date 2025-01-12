@@ -220,7 +220,12 @@ window.addEventListener('touchmove', (e) => {
     }
 });
 
-window.addEventListener('touchend', handleJoystickEnd);
+window.addEventListener('touchend', (e) => {
+    if (e.touches.length === 0) {
+        handleJoystickEnd();
+    }
+});
+
 
         spritesheet.onload = () => {
             map.onload = () => {
