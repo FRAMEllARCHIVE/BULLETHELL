@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web Game</title>
+    <title>Dungeons</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #000;
+            background-color: grey;
         }
         canvas {
             display: block;
@@ -75,8 +75,8 @@
         map.src = 'map.png';
 
         const mapOffset = {
-            x: (canvas.width - map.width) / 2,
-            y: (canvas.height - map.height) / 2
+            x: 0,
+            y: 0
         };
 
         const joystick = document.getElementById('joystick');
@@ -106,28 +106,20 @@
             let moved = false;
 
             if (keys.w || (gamepad && gamepad.axes[1] < -0.5)) {
-                if (player.y - player.height / 2 > mapOffset.y) {
-                    player.y -= player.speed;
-                    moved = true;
-                }
+                mapOffset.y += player.speed;
+                moved = true;
             }
             if (keys.s || (gamepad && gamepad.axes[1] > 0.5)) {
-                if (player.y + player.height / 2 < mapOffset.y + map.height) {
-                    player.y += player.speed;
-                    moved = true;
-                }
+                mapOffset.y -= player.speed;
+                moved = true;
             }
             if (keys.a || (gamepad && gamepad.axes[0] < -0.5)) {
-                if (player.x - player.width / 2 > mapOffset.x) {
-                    player.x -= player.speed;
-                    moved = true;
-                }
+                mapOffset.x += player.speed;
+                moved = true;
             }
             if (keys.d || (gamepad && gamepad.axes[0] > 0.5)) {
-                if (player.x + player.width / 2 < mapOffset.x + map.width) {
-                    player.x += player.speed;
-                    moved = true;
-                }
+                mapOffset.x -= player.speed;
+                moved = true;
             }
 
             if (moved) {
@@ -220,10 +212,6 @@
 
         spritesheet.onload = () => {
             map.onload = () => {
-                mapOffset.x = (canvas.width - map.width) / 2;
-                mapOffset.y = (canvas.height - map.height) / 2;
-                player.x = canvas.width / 2;
-                player.y = canvas.height / 2;
                 gameLoop();
             };
         };
