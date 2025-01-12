@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Dungeons</title>
     <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js"></script>
+    <script type="module" src="controls.js"></script>
     <style>
         body {
             margin: 0;
@@ -24,6 +25,8 @@
     </div>
 
     <script>
+        import { Controls } from './controls.js';
+
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
@@ -41,18 +44,6 @@
             moving: false
         };
 
-        const keys = {
-            w: false,
-            a: false,
-            s: false,
-            d: false
-        };
-
-        let gamepad = null;
-
-        const spritesheet = new Image();
-        spritesheet.src = 'spritesheet.png';
-
         const map = new Image();
         map.src = 'map.png';
 
@@ -61,35 +52,13 @@
             y: 0
         };
 
+        const controls = new Controls();
+        controls.initKeyboard();
+        controls.initGamepad();
+        controls.initJoystick();
 
-        const joystick = document.getElementById('joystick');
-        const joystickIndicator = document.getElementById('joystick-indicator');
-        let joystickActive = false;
-        let joystickCenter = { x: 0, y: 0 };
-
-        const styleJoysticks = () => {
-            const joystickStyle = joystick.style;
-            joystickStyle.position = 'absolute';
-            joystickStyle.bottom = '20px';
-            joystickStyle.left = '20px';
-            joystickStyle.width = '100px';
-            joystickStyle.height = '100px';
-            joystickStyle.background = 'rgba(255, 255, 255, 0.2)';
-            joystickStyle.borderRadius = '50%';
-            joystickStyle.display = 'none';
-
-            const joystickIndicatorStyle = joystickIndicator.style;
-            joystickIndicatorStyle.position = 'absolute';
-            joystickIndicatorStyle.width = '40px';
-            joystickIndicatorStyle.height = '40px';
-            joystickIndicatorStyle.background = 'rgba(255, 255, 255, 0.5)';
-            joystickIndicatorStyle.borderRadius = '50%';
-            joystickIndicatorStyle.top = '50%';
-            joystickIndicatorStyle.left = '50%';
-            joystickIndicatorStyle.transform = 'translate(-50%, -50%)';
-        };
-
-        styleJoysticks();
+        const spritesheet = new Image();
+        spritesheet.src = 'spritesheet.png';
 
         function drawPlayer() {
             ctx.drawImage(
@@ -112,19 +81,19 @@
         function handlePlayerMovement() {
             let moved = false;
 
-            if (keys.w || (gamepad && gamepad.axes[1] < -0.5)) {
+            if (controls.keys.w || (controls.gamepad && controls.gamepad.axes[1] < -0.5)) {
                 mapOffset.y += player.speed;
                 moved = true;
             }
-            if (keys.s || (gamepad && gamepad.axes[1] > 0.5)) {
+            if (controls.keys.s || (controls.gamepad && controls.gamepad.axes[1] > 0.5)) {
                 mapOffset.y -= player.speed;
                 moved = true;
             }
-            if (keys.a || (gamepad && gamepad.axes[0] < -0.5)) {
+            if (controls.keys.a || (controls.gamepad && controls.gamepad.axes[0] < -0.5)) {
                 mapOffset.x += player.speed;
                 moved = true;
             }
-            if (keys.d || (gamepad && gamepad.axes[0] > 0.5)) {
+            if (controls.keys.d || (controls.gamepad && controls.gamepad.axes[0] > 0.5)) {
                 mapOffset.x -= player.speed;
                 moved = true;
             }
@@ -139,35 +108,7 @@
         }
 
         function updateGamepad() {
-            const gamepads = navigator.getGamepads();
-            gamepad = gamepads[0] || null;
-        }
-
-        function handleJoystickMove(event) {
-            const touch = event.touches[0];
-            const dx = touch.clientX - joystickCenter.x;
-            const dy = touch.clientY - joystickCenter.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            const maxDistance = 50;
-
-            if (distance > maxDistance) {
-                const angle = Math.atan2(dy, dx);
-                joystickIndicator.style.left = `${50 + Math.cos(angle) * maxDistance}%`;
-                joystickIndicator.style.top = `${50 + Math.sin(angle) * maxDistance}%`;
-            } else {
-                joystickIndicator.style.left = `${50 + dx}px`;
-                joystickIndicator.style.top = `${50 + dy}px`;
-            }
-
-            keys.w = dy < -10;
-            keys.s = dy > 10;
-            keys.a = dx < -10;
-            keys.d = dx > 10;
-        }
-
-        function handleJoystickEnd() {
-            joystick.style.display = 'none';
-            keys.w = keys.a = keys.s = keys.d = false;
+            controls.updateGamepad();
         }
 
         function gameLoop() {
@@ -178,60 +119,6 @@
             updateGamepad();
             requestAnimationFrame(gameLoop);
         }
-
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'w' || e.key === 'ArrowUp') keys.w = true;
-            if (e.key === 'a' || e.key === 'ArrowLeft') keys.a = true;
-            if (e.key === 's' || e.key === 'ArrowDown') keys.s = true;
-            if (e.key === 'd' || e.key === 'ArrowRight') keys.d = true;
-        });
-
-        window.addEventListener('keyup', (e) => {
-            if (e.key === 'w' || e.key === 'ArrowUp') keys.w = false;
-            if (e.key === 'a' || e.key === 'ArrowLeft') keys.a = false;
-            if (e.key === 's' || e.key === 'ArrowDown') keys.s = false;
-            if (e.key === 'd' || e.key === 'ArrowRight') keys.d = false;
-        });
-
-        window.addEventListener('gamepadconnected', () => {
-            console.log('Gamepad connected');
-        });
-
-        window.addEventListener('gamepaddisconnected', () => {
-            console.log('Gamepad disconnected');
-            gamepad = null;
-        });
-
-window.addEventListener('touchstart', (e) => {
-    if (e.touches.length === 1) {
-        const touch = e.touches[0];
-        const screenWidth = window.innerWidth;
-        const screenHeight = window.innerHeight;
-
-        if (touch.clientX <= screenWidth / 2 && touch.clientY >= screenHeight / 2) {
-            joystick.style.display = 'block';
-            joystickCenter = {
-                x: touch.clientX,
-                y: touch.clientY
-            };
-            joystick.style.left = `${joystickCenter.x - 50}px`;
-            joystick.style.top = `${joystickCenter.y - 50}px`;
-        }
-    }
-});
-
-window.addEventListener('touchmove', (e) => {
-    if (joystick.style.display === 'block') {
-        handleJoystickMove(e);
-    }
-});
-
-window.addEventListener('touchend', (e) => {
-    if (e.touches.length === 0) {
-        handleJoystickEnd();
-     }
-});
-
 
         spritesheet.onload = () => {
             map.onload = () => {
