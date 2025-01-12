@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Dungeons</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
             background-color: grey;
+            user-select: none;
         }
         canvas {
             display: block;
@@ -195,20 +196,31 @@
             gamepad = null;
         });
 
-        window.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 1) {
-                joystick.style.display = 'block';
-                joystickCenter = {
-                    x: e.touches[0].clientX,
-                    y: e.touches[0].clientY
-                };
-                joystick.style.left = `${joystickCenter.x - 50}px`;
-                joystick.style.top = `${joystickCenter.y - 50}px`;
-            }
-        });
+window.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
 
-        window.addEventListener('touchmove', handleJoystickMove);
-        window.addEventListener('touchend', handleJoystickEnd);
+        if (touch.clientX <= screenWidth / 2 && touch.clientY >= screenHeight / 2) {
+            joystick.style.display = 'block';
+            joystickCenter = {
+                x: touch.clientX,
+                y: touch.clientY
+            };
+            joystick.style.left = `${joystickCenter.x - 50}px`;
+            joystick.style.top = `${joystickCenter.y - 50}px`;
+        }
+    }
+});
+
+window.addEventListener('touchmove', (e) => {
+    if (joystick.style.display === 'block') {
+        handleJoystickMove(e);
+    }
+});
+
+window.addEventListener('touchend', handleJoystickEnd);
 
         spritesheet.onload = () => {
             map.onload = () => {
