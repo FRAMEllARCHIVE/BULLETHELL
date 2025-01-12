@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: white;
+        }
+        canvas {
+            display: block;
+        }
+        #joystick {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: none;
+        }
+        #joystick-indicator {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="joystick">
+        <div id="joystick-indicator"></div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            width: 100,
+            height: 100,
+            frameX: 0,
+            frameY: 0,
+            speed: 5,
+            moving: false
+        };
+
+        const keys = {
+            w: false,
+            a: false,
+            s: false,
+            d: false
+        };
+
+        let gamepad = null;
+
+        const spritesheet = new Image();
+        spritesheet.src = 'spritesheet.png';
+
+        const map = new Image();
+        map.src = 'map.png';
+
+        const mapOffset = {
+            x: 0,
+            y: 0
+        };
+
+        const joystick = document.getElementById('joystick');
+        const joystickIndicator = document.getElementById('joystick-indicator');
+        let joystickActive = false;
+        let joystickCenter = { x: 0, y: 0 };
+
+        function drawPlayer() {
+            ctx.drawImage(
+                spritesheet,
+                player.frameX * player.width,
+                player.frameY * player.height,
+                player.width,
+                player.height,
+                player.x - player.width / 2,
+                player.y - player.height / 2,
+                player.width,
+                player.height
+            );
+        }
+
+        function drawMap() {
+            ctx.drawImage(map, mapOffset.x, mapOffset.y, map.width, map.height);
+        }
+
+        function handlePlayerMovement() {
+            let moved = false;
+
+            if (keys.w || (gamepad && gamepad.axes[1] < -0.5)) {
+                mapOffset.y += player.speed;
+                moved = true;
+            }
+            if (keys.s || (gamepad && gamepad.axes[1] > 0.5)) {
+                mapOffset.y -= player.speed;
+                moved = true;
+            }
+            if (keys.a || (gamepad && gamepad.axes[0] < -0.5)) {
+                mapOffset.x += player.speed;
+                moved = true;
+            }
+            if (keys.d || (gamepad && gamepad.axes[0] > 0.5)) {
+                mapOffset.x -= player.speed;
+                moved = true;
+            }
+
+            if (moved) {
+                player.moving = true;
+                player.frameX = (player.frameX + 1) % 4;
+            } else {
+                player.moving = false;
+                player.frameX = 0;
+            }
+        }
+
+        function updateGamepad() {
+            const gamepads = navigator.getGamepads();
+            gamepad = gamepads[0] || null;
+        }
+
+        function handleJoystickMove(event) {
+            const touch = event.touches[0];
+            const dx = touch.clientX - joystickCenter.x;
+            const dy = touch.clientY - joystickCenter.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const maxDistance = 50;
+
+            if (distance > maxDistance) {
+                const angle = Math.atan2(dy, dx);
+                joystickIndicator.style.left = `${50 + Math.cos(angle) * maxDistance}%`;
+                joystickIndicator.style.top = `${50 + Math.sin(angle) * maxDistance}%`;
+            } else {
+                joystickIndicator.style.left = `${50 + dx}px`;
+                joystickIndicator.style.top = `${50 + dy}px`;
+            }
+
+            keys.w = dy < -10;
+            keys.s = dy > 10;
+            keys.a = dx < -10;
+            keys.d = dx > 10;
+        }
+
+        function handleJoystickEnd() {
+            joystick.style.display = 'none';
+            keys.w = keys.a = keys.s = keys.d = false;
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawMap();
+            drawPlayer();
+            handlePlayerMovement();
+            updateGamepad();
+            requestAnimationFrame(gameLoop);
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'w' || e.key === 'ArrowUp') keys.w = true;
+            if (e.key === 'a' || e.key === 'ArrowLeft') keys.a = true;
+            if (e.key === 's' || e.key === 'ArrowDown') keys.s = true;
+            if (e.key === 'd' || e.key === 'ArrowRight') keys.d = true;
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'w' || e.key === 'ArrowUp') keys.w = false;
+            if (e.key === 'a' || e.key === 'ArrowLeft') keys.a = false;
+            if (e.key === 's' || e.key === 'ArrowDown') keys.s = false;
+            if (e.key === 'd' || e.key === 'ArrowRight') keys.d = false;
+        });
+
+        window.addEventListener('gamepadconnected', () => {
+            console.log('Gamepad connected');
+        });
+
+        window.addEventListener('gamepaddisconnected', () => {
+            console.log('Gamepad disconnected');
+            gamepad = null;
+        });
+
+        window.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                joystick.style.display = 'block';
+                joystickCenter = {
+                    x: e.touches[0].clientX,
+                    y: e.touches[0].clientY
+                };
+                joystick.style.left = `${joystickCenter.x - 50}px`;
+                joystick.style.top = `${joystickCenter.y - 50}px`;
+            }
+        });
+
+        window.addEventListener('touchmove', handleJoystickMove);
+        window.addEventListener('touchend', handleJoystickEnd);
+
+        spritesheet.onload = () => {
+            map.onload = () => {
+                gameLoop();
+            };
+        };
+    </script>
+</body>
+</html>
