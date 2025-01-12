@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web Game</title>
+    <title>DUNGEONS</title>
     <style>
         body {
             margin: 0;
@@ -105,26 +105,26 @@
         function handlePlayerMovement() {
             let moved = false;
 
-            if (keys.w || (gamepad && gamepad.axes[1] < -0.5)) {
+            if ((keys.w || (gamepad && gamepad.axes[1] < -0.5)) && mapOffset.y + player.height / 2 < 0) {
                 mapOffset.y += player.speed;
                 moved = true;
             }
-            if (keys.s || (gamepad && gamepad.axes[1] > 0.5)) {
+            if ((keys.s || (gamepad && gamepad.axes[1] > 0.5)) && canvas.height - mapOffset.y - player.height / 2 < map.height) {
                 mapOffset.y -= player.speed;
                 moved = true;
             }
-            if (keys.a || (gamepad && gamepad.axes[0] < -0.5)) {
+            if ((keys.a || (gamepad && gamepad.axes[0] < -0.5)) && mapOffset.x + player.width / 2 < 0) {
                 mapOffset.x += player.speed;
                 moved = true;
             }
-            if (keys.d || (gamepad && gamepad.axes[0] > 0.5)) {
+            if ((keys.d || (gamepad && gamepad.axes[0] > 0.5)) && canvas.width - mapOffset.x - player.width / 2 < map.width) {
                 mapOffset.x -= player.speed;
                 moved = true;
             }
 
             if (moved) {
                 player.moving = true;
-                player.frameX = (player.frameX + 1) % 4;
+                player.frameX = (player.frameX + 1) % 4; // Cycle through animation frames
             } else {
                 player.moving = false;
                 player.frameX = 0;
